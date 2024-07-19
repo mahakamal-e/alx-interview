@@ -7,8 +7,12 @@ import sys
 import signal
 import re
 
-# Regular expression pattern for matching the log lines
-log_pattern = re.compile(r'(\d+\.\d+\.\d+\.\d+) - \[(.*?)\] "GET /projects/260 HTTP/1.1" (\d+) (\d+)')
+
+log_pattern = re.compile(
+    r'(\d+\.\d+\.\d+\.\d+) - \['
+    r'(.*?)\] "GET /projects/260 HTTP/1.1" (\d+) (\d+)'
+)
+
 
 def process_line(line, status_codes, itr_num, file_size):
     """
@@ -35,6 +39,7 @@ def process_line(line, status_codes, itr_num, file_size):
     
     return itr_num, file_size
 
+
 def print_statistics(file_size, status_codes):
     """
     Print the statistics of file size and status codes.
@@ -48,10 +53,12 @@ def print_statistics(file_size, status_codes):
         if status_codes[code] > 0:
             print(f"{code}: {status_codes[code]}")
 
+
 def signal_handler(sig, frame):
     """Handle keyboard interruption and print metrics."""
     print_statistics(file_size, status_codes)
     sys.exit(0)
+
 
 def main():
     """Starting point for the log parser"""
