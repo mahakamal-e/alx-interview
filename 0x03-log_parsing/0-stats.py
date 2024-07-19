@@ -3,97 +3,114 @@
 This script reads log lines from standard input,
 extracts relevant data, and computes statistics.
 """
-
-import sys
-import signal
 import re
+import sys
 
-log_pattern = re.compile(
-    r'(\d+\.\d+\.\d+\.\d+) - \['
-    r'(.*?)\] "GET /projects/260 HTTP/1.1" (\d+) (\d+)'
-)
-
-# Define global variables
-file_size = 0
-status_codes = {
-    '200': 0,
-    '301': 0,
-    '400': 0,
-    '401': 0,
-    '403': 0,
-    '404': 0,
-    '405': 0,
-    '500': 0
-}
-
-def process_line(line, status_codes, itr_num, file_size):
+def parse_log_line(log_line):
     """
-    Process a single line of the log and update metrics.
+    Extracts relevant data from a log line.
 
     Args:
-        line (str): The log line to process.
-        status_codes (dict): Dictionary to count status codes.
-        itr_num (int): Number of valid lines processed.
-        file_size (int): Total file size processed.
+        log_line (str): A single line from the log input.
 
     Returns:
-        tuple: Updated values of itr_num and file_size.
+        tuple: A tuple containing the response code and the response size.
     """
-    match = log_pattern.match(line)
+    patterns = (
+        r"\s*(?P<ip_address>\S+)\s*",
+        r"\s*\[(?P<timestamp>\d+-\d+-\d+ \d+:\d+:\d+\.\d+)\]",
+        r'\s*"(?P<request_details>[^"]*)"\s*',
+        r"\s*(?P<response_code>\S+)",
+        r"\s*(?P<response_size>\d+)(?:\s*(?P<additional_info>\S*))?",
+    )
 
+    response_code = '0'
+    response_size = 0
+
+    log_format = "{}\\-{}{}{}{}\\s*".format(patterns[0],
+                                            patterns[1],
+                                            patterns[2],
+                                            patterns[3],
+                                            patterns[4])
+    match = re.fullmatch(log_format, log_line)
     if match:
-        _, _, status_code_str, file_size_str = match.groups()
+        response_code = match.group("response_code")
+        response_size = int(match.group("response_size"))
 
-        if status_code_str in status_codes:
-            status_codes[status_code_str] += 1
-            file_size += int(file_size_str)
-            itr_num += 1
+    return response_code, response_size
 
-    return itr_num, file_size
 
-def print_statistics(file_size, status_codes):
+def handle_log_line(log_line, code_counts, total_lines, total_size):
     """
-    Print the statistics of file size and status codes.
+    Update metrics based on a single log line.
 
     Args:
-        file_size (int): Total file size processed.
-        status_codes (dict): Dictionary of status code counts.
-    """
-    print(f"File size: {file_size}")
-    for code in sorted(status_codes.keys()):
-        if status_codes[code] > 0:
-            print(f"{code}: {status_codes[code]}")
+        log_line (str): A single line from the log input.
+        code_counts (dict): Dictionary of counts for each status code.
+        total_lines (int): Total number of lines processed.
+        total_size (int): Total size of responses processed.
 
-def signal_handler(sig, frame):
-    """Handle keyboard interruption and print metrics."""
-    global file_size
-    global status_codes
-    print_statistics(file_size, status_codes)
-    sys.exit(0)
+    Returns:
+        tuple: Updated total number of lines and total size.
+    """
+    response_code, extracted_size = parse_log_line(log_line)
+
+    if response_code in code_counts:
+        code_counts[response_code] += 1
+
+    total_lines += 1
+    total_size += extracted_size
+    return total_lines, total_size
+
+
+def display_metrics(total_size, code_counts):
+    """
+    Display the total file size and status code counts.
+
+    Args:
+        total_size (int): Total size of responses processed.
+        code_counts (dict): Dictionary of counts for each status code.
+    """
+    print(f"File size: {total_size}")
+
+    non_zero_counts = {code: count for code, count in code_counts.items() if count > 0}
+    sorted_counts = sorted(non_zero_counts.items())
+
+    for code, count in sorted_counts:
+        print(f'{code}: {count}')
+
 
 def main():
-    """Starting point for the log parser"""
-    global file_size
-    global status_codes
-
-    itr_num = 0
-    signal.signal(signal.SIGINT, signal_handler)
+    """Main function to parse log lines and compute metrics."""
+    total_lines = 0
+    code_counts = {
+        '200': 0,
+        '301': 0,
+        '400': 0,
+        '401': 0,
+        '403': 0,
+        '404': 0,
+        '405': 0,
+        '500': 0
+    }
+    total_size = 0
 
     try:
-        for line in sys.stdin:
-            itr_num, file_size = process_line(line,
-                                              status_codes,
-                                              itr_num,
-                                              file_size)
+        for log_line in sys.stdin:
+            total_lines, total_size = handle_log_line(log_line,
+                                                      code_counts,
+                                                      total_lines,
+                                                      total_size)
 
-            if itr_num % 10 == 0:
-                print_statistics(file_size, status_codes)
+            if total_lines % 10 == 0:
+                display_metrics(total_size, code_counts)
 
-        print_statistics(file_size, status_codes)
+        display_metrics(total_size, code_counts)
 
     except KeyboardInterrupt:
-        print_statistics(file_size, status_codes)
-        sys.exit(0)
+        display_metrics(total_size, code_counts)
+        raise
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
