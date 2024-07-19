@@ -3,16 +3,28 @@
 This script reads log lines from standard input,
 extracts relevant data, and computes statistics.
 """
+
 import sys
 import signal
 import re
-
 
 log_pattern = re.compile(
     r'(\d+\.\d+\.\d+\.\d+) - \['
     r'(.*?)\] "GET /projects/260 HTTP/1.1" (\d+) (\d+)'
 )
 
+# Define global variables
+file_size = 0
+status_codes = {
+    '200': 0,
+    '301': 0,
+    '400': 0,
+    '401': 0,
+    '403': 0,
+    '404': 0,
+    '405': 0,
+    '500': 0
+}
 
 def process_line(line, status_codes, itr_num, file_size):
     """
@@ -36,8 +48,8 @@ def process_line(line, status_codes, itr_num, file_size):
             status_codes[status_code_str] += 1
             file_size += int(file_size_str)
             itr_num += 1
-    return itr_num, file_size
 
+    return itr_num, file_size
 
 def print_statistics(file_size, status_codes):
     """
@@ -52,27 +64,19 @@ def print_statistics(file_size, status_codes):
         if status_codes[code] > 0:
             print(f"{code}: {status_codes[code]}")
 
-
 def signal_handler(sig, frame):
     """Handle keyboard interruption and print metrics."""
+    global file_size
+    global status_codes
     print_statistics(file_size, status_codes)
     sys.exit(0)
 
-
 def main():
     """Starting point for the log parser"""
+    global file_size
+    global status_codes
+
     itr_num = 0
-    status_codes = {
-        '200': 0,
-        '301': 0,
-        '400': 0,
-        '401': 0,
-        '403': 0,
-        '404': 0,
-        '405': 0,
-        '500': 0
-    }
-    file_size = 0
     signal.signal(signal.SIGINT, signal_handler)
 
     try:
@@ -90,7 +94,6 @@ def main():
     except KeyboardInterrupt:
         print_statistics(file_size, status_codes)
         sys.exit(0)
-
 
 if __name__ == "__main__":
     main()
