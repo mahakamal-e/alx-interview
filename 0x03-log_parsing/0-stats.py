@@ -6,6 +6,7 @@ extracts relevant data, and computes statistics.
 import re
 import sys
 
+
 def parse_log_line(log_line):
     """
     Extracts relevant data from a log line.
@@ -73,7 +74,12 @@ def display_metrics(total_size, code_counts):
     """
     print(f"File size: {total_size}")
 
-    non_zero_counts = {code: count for code, count in code_counts.items() if count > 0}
+    non_zero_counts = {
+        code: count
+        for code, count in code_counts.items()
+        if count > 0
+    }
+
     sorted_counts = sorted(non_zero_counts.items())
 
     for code, count in sorted_counts:
