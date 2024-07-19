@@ -28,15 +28,14 @@ def process_line(line, status_codes, itr_num, file_size):
         tuple: Updated values of itr_num and file_size.
     """
     match = log_pattern.match(line)
-    
+
     if match:
         _, _, status_code_str, file_size_str = match.groups()
-        
+
         if status_code_str in status_codes:
             status_codes[status_code_str] += 1
             file_size += int(file_size_str)
             itr_num += 1
-    
     return itr_num, file_size
 
 
@@ -78,7 +77,10 @@ def main():
 
     try:
         for line in sys.stdin:
-            itr_num, file_size = process_line(line, status_codes, itr_num, file_size)
+            itr_num, file_size = process_line(line,
+                                              status_codes,
+                                              itr_num,
+                                              file_size)
 
             if itr_num % 10 == 0:
                 print_statistics(file_size, status_codes)
