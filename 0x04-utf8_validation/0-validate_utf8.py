@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-This module provides a method to determine if a given data set 
+This module provides a method to determine if a given data set
 represents a valid UTF-8 encoding.
 """
 
@@ -40,4 +40,5 @@ def validUTF8(data):
         else:
             if not (byte & mask1 and not (byte & mask2)):
                 return False
+            num_bytes -= 1
     return num_bytes == 0
