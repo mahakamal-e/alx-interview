@@ -1,86 +1,38 @@
 #!/usr/bin/python3
 """
-This module provides a method to determine if a given data set
-represents a valid UTF-8 encoding.
+Module that defines a validUTF8 function.
 """
 
 from typing import List
 
-
 def validUTF8(data: List[int]) -> bool:
     """
     Determine if a given data set represents a valid UTF-8 encoding.
 
     Args:
-        data (list): A list of integers representing the data set.
-                     Each integer represents 1 byte of data.
+        data (List[int]): A list of integers representing the data set.
+                          Each integer represents 1 byte of data.
 
     Returns:
         bool: True if data is a valid UTF-8 encoding, else False.
     """
-    num_bytes = 0
-
-    mask1 = 1 << 7
-    mask2 = 1 << 6
+    remaining_bytes = 0
 
     for byte in data:
-        byte = byte & 0xFF
-
-        if num_bytes == 0:
-            if (byte & mask1) == 0:
+        if remaining_bytes == 0:
+            if byte >> 7 == 0:
                 continue
-            elif (byte & (mask1 >> 1)) == mask1:
-                return False
-            elif (byte & (mask1 >> 2)) == (mask1 >> 1):
-                num_bytes = 1
-            elif (byte & (mask1 >> 3)) == (mask1 >> 2):
-                num_bytes = 2
-            elif (byte & (mask1 >> 4)) == (mask1 >> 3):
-                num_bytes = 3
+            elif byte >> 5 == 0b110:
+                remaining_bytes = 1
+            elif byte >> 4 == 0b1110:
+                remaining_bytes = 2
+            elif byte >> 3 == 0b11110:
+                remaining_bytes = 3
             else:
                 return False
         else:
-            if not (byte & mask1 and not (byte & mask2)):
+            if byte >> 6 != 0b10:
                 return False
-            num_bytes -= 1
+            remaining_bytes -= 1
 
-    return num_bytes == 0
-
-def validUTF8(data: List[int]) -> bool:
-    """
-    Determine if a given data set represents a valid UTF-8 encoding.
-
-    Args:
-        data (list): A list of integers representing the data set.
-                     Each integer represents 1 byte of data.
-
-    Returns:
-        bool: True if data is a valid UTF-8 encoding, else False.
-    """
-    num_bytes = 0
-
-    mask1 = 1 << 7
-    mask2 = 1 << 6
-
-    for byte in data:
-        byte = byte & 0xFF
-
-        if num_bytes == 0:
-            if (byte & mask1) == 0:
-                continue
-            elif (byte & (mask1 >> 1)) == mask1:
-                return False
-            elif (byte & (mask1 >> 2)) == (mask1 >> 1):
-                num_bytes = 1
-            elif (byte & (mask1 >> 3)) == (mask1 >> 2):
-                num_bytes = 2
-            elif (byte & (mask1 >> 4)) == (mask1 >> 3):
-                num_bytes = 3
-            else:
-                return False
-        else:
-            if not (byte & mask1 and not (byte & mask2)):
-                return False
-            num_bytes -= 1
-
-    return num_bytes == 0
+    return remaining_bytes == 0
