@@ -5,6 +5,7 @@ Module that defines a validUTF8 function.
 
 from typing import List
 
+
 def validUTF8(data: List[int]) -> bool:
     """
     Determine if a given data set represents a valid UTF-8 encoding.
