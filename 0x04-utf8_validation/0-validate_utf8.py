@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Module that defines a validUTF8 function.
+Module to determine if a given data set represents a valid UTF-8 encoding.
 """
 
 from typing import List
@@ -10,29 +10,35 @@ def validUTF8(data: List[int]) -> bool:
     """
     Determine if a given data set represents a valid UTF-8 encoding.
 
+    A valid UTF-8 encoding can have characters of lengths 1 to 4 bytes. This
+    function checks if the given list of integers represents such a valid
+    encoding. Each integer in the list represents a single byte of data.
+
     Args:
-        data (List[int]): A list of integers representing the data set.
-                          Each integer represents 1 byte of data.
+        data (List[int]): A list of integers, where each integer is a byte
+                          (0 <= byte <= 255).
 
     Returns:
-        bool: True if data is a valid UTF-8 encoding, else False.
+        bool: True if the data set represents a valid UTF-8 encoding, False otherwise.
     """
     remaining_bytes = 0
 
     for byte in data:
+        binary_rep = format(byte, '#010b')[-8:]
+
         if remaining_bytes == 0:
-            if byte >> 7 == 0:
+            if binary_rep[0] == '0':
                 continue
-            elif byte >> 5 == 0b110:
+            elif binary_rep.startswith('110'):
                 remaining_bytes = 1
-            elif byte >> 4 == 0b1110:
+            elif binary_rep.startswith('1110'):
                 remaining_bytes = 2
-            elif byte >> 3 == 0b11110:
+            elif binary_rep.startswith('11110'):
                 remaining_bytes = 3
             else:
                 return False
         else:
-            if byte >> 6 != 0b10:
+            if not binary_rep.startswith('10'):
                 return False
             remaining_bytes -= 1
 
