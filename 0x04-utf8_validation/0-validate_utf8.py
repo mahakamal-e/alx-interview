@@ -19,7 +19,8 @@ def validUTF8(data: List[int]) -> bool:
                           (0 <= byte <= 255).
 
     Returns:
-        bool: True if the data set represents a valid UTF-8 encoding, False otherwise.
+        bool: True if the data set represents a valid UTF-8 encoding,
+        False otherwise.
     """
     remaining_bytes = 0
 
