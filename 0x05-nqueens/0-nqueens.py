@@ -12,6 +12,7 @@ def is_safe(board, row, col, N):
             return False
     return True
 
+
 def solve_nqueens(N):
     """sets up the board and starts the recursive """
     def place_queens(row):
@@ -32,6 +33,7 @@ def solve_nqueens(N):
     place_queens(0)
     return solutions
 
+
 def main():
     if len(sys.argv) != 2:
         print("Usage: nqueens N")
@@ -51,6 +53,6 @@ def main():
     for solution in solutions:
         print(solution)
 
+
 if __name__ == "__main__":
     main()
-
