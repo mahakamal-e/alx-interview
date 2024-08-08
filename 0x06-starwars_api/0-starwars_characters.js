@@ -1,5 +1,5 @@
 #!/usr/bin/node
-const request = require('request');
+const rp = require('request-promise');
 
 const movieId = process.argv[2];
 
@@ -11,62 +11,39 @@ if (!movieId) {
 // Define the API URL with the provided movieId
 const apiUrl = `https://swapi.dev/api/films/${movieId}/`;
 
-// Fetch the film data
-request(apiUrl, { json: true }, (err, res, body) => {
-  if (err) {
-    console.error(err);
-    return;
+// Function to fetch character data
+const fetchCharacterName = async (url) => {
+  try {
+    const character = await rp({ uri: url, json: true });
+    return character.name;
+  } catch (error) {
+    console.error(`Failed to fetch character data from ${url}: ${error.message}`);
+    return null;
   }
+};
 
-  if (res.statusCode !== 200) {
-    console.error(`Failed to fetch film data. Status code: ${res.statusCode}`);
-    return;
-  }
+// Main function to fetch movie data and character names
+const fetchMovieAndPrintCharacters = async () => {
+  try {
+    // Fetch movie data
+    const movie = await rp({ uri: apiUrl, json: true });
+    const characterUrls = movie.characters;
 
-  const characters = body.characters;
+    if (!characterUrls || characterUrls.length === 0) {
+      console.log('No characters found for this movie.');
+      return;
+    }
 
-  if (!characters || characters.length === 0) {
-    console.log('No characters found for this movie.');
-    return;
-  }
-
-  // Function to fetch each character's data
-  const fetchCharacterName = (url, callback) => {
-    request(url, { json: true }, (err, res, body) => {
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      if (res.statusCode !== 200) {
-        callback(`Failed to fetch character data. Status code: ${res.statusCode}`);
-        return;
-      }
-
-      callback(null, body.name);
-    });
-  };
-
-  // Function to print all character names
-  const printCharacterNames = (urls) => {
-    let remaining = urls.length;
-
-    urls.forEach((url) => {
-      fetchCharacterName(url, (err, name) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-
+    // Fetch and print all character names
+    for (const url of characterUrls) {
+      const name = await fetchCharacterName(url);
+      if (name) {
         console.log(name);
-        remaining--;
+      }
+    }
+  } catch (error) {
+    console.error(`Failed to fetch movie data: ${error.message}`);
+  }
+};
 
-        if (remaining === 0) {
-          process.exit();
-        }
-      });
-    });
-  };
-
-  printCharacterNames(characters);
-});
+fetchMovieAndPrintCharacters();
